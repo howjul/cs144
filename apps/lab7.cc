@@ -121,11 +121,11 @@ class NetworkInterfaceAdapter : public TCPOverIPv4Adapter {
     FileDescriptor &frame_fd() { return _data_socket_pair.second; }
 };
 
-class TCPSocketLab7 : public TCPSpongeSocket<NetworkInterfaceAdapter> {
+class TCPSocketLab4 : public TCPSpongeSocket<NetworkInterfaceAdapter> {
     Address _local_address;
 
   public:
-    TCPSocketLab7(const Address &ip_address, const Address &next_hop)
+    TCPSocketLab4(const Address &ip_address, const Address &next_hop)
         : TCPSpongeSocket<NetworkInterfaceAdapter>(NetworkInterfaceAdapter(ip_address, next_hop))
         , _local_address(ip_address) {}
 
@@ -185,8 +185,8 @@ void program_body(bool is_client, const string &bounce_host, const string &bounc
     }
 
     /* set up the client */
-    TCPSocketLab7 sock =
-        is_client ? TCPSocketLab7{{"192.168.0.50"}, {"192.168.0.1"}} : TCPSocketLab7{{"172.16.0.100"}, {"172.16.0.1"}};
+    TCPSocketLab4 sock =
+        is_client ? TCPSocketLab4{{"192.168.0.50"}, {"192.168.0.1"}} : TCPSocketLab4{{"172.16.0.100"}, {"172.16.0.1"}};
 
     atomic<bool> exit_flag{};
 
