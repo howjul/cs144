@@ -20,7 +20,33 @@ size_t TCPConnection::unassembled_bytes() const { return {}; }
 
 size_t TCPConnection::time_since_last_segment_received() const { return {}; }
 
-void TCPConnection::segment_received(const TCPSegment &seg) { DUMMY_CODE(seg); }
+void TCPConnection::segment_received(const TCPSegment &seg) { 
+    // you code here.
+    //你需要考虑到ACK包、RST包以及keep-alive数据包等多种情况
+    
+    //状态变化
+    // 如果是 LISEN 到了 SYN
+    if (TCPState::state_summary(_receiver) == TCPReceiverStateSummary::SYN_RECV &&
+        TCPState::state_summary(_sender) == TCPSenderStateSummary::CLOSED) {
+        // 此时肯定是第一次调用 fill_window，因此会发送 SYN + ACK
+        connect();
+        return;
+    }
+
+    // 判断 TCP 断开连接时是否时需要等待
+    // CLOSE_WAIT
+    if (TCPState::state_summary(_receiver) == TCPReceiverStateSummary::FIN_RECV &&
+        TCPState::state_summary(_sender) == TCPSenderStateSummary::SYN_ACKED)
+        _linger_after_streams_finish = false;
+
+    // 如果到了准备断开连接的时候。服务器端先断
+    // CLOSED
+    if (TCPState::state_summary(_receiver) == TCPReceiverStateSummary::FIN_RECV &&
+        TCPState::state_summary(_sender) == TCPSenderStateSummary::FIN_ACKED && !_linger_after_streams_finish) {
+        _is_active = false;
+        return;
+    }
+}
 
 bool TCPConnection::active() const { return {}; }
 
