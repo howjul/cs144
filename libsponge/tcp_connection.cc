@@ -24,9 +24,9 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
     
     bool need_send_ack = seg.length_in_sequence_space();
     // you code here.
-    //你需要考虑到ACK包、RST包以及keep-alive数据包等多种情况
+    //你需要考虑到ACK包、RST包等多种情况
     
-    //状态变化
+    //状态变化(按照个人的情况可进行修改)
     // 如果是 LISEN 到了 SYN
     if (TCPState::state_summary(_receiver) == TCPReceiverStateSummary::SYN_RECV &&
         TCPState::state_summary(_sender) == TCPSenderStateSummary::CLOSED) {
@@ -48,6 +48,10 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
         _is_active = false;
         return;
     }
+
+    // 如果收到的数据包里没有任何数据，则这个数据包可能只是为了 keep-alive
+    if (need_send_ack)
+        _sender.send_empty_segment();
 }
 
 bool TCPConnection::active() const { return {}; }
