@@ -21,6 +21,8 @@ size_t TCPConnection::unassembled_bytes() const { return {}; }
 size_t TCPConnection::time_since_last_segment_received() const { return {}; }
 
 void TCPConnection::segment_received(const TCPSegment &seg) { 
+    
+    bool need_send_ack = seg.length_in_sequence_space();
     // you code here.
     //你需要考虑到ACK包、RST包以及keep-alive数据包等多种情况
     
