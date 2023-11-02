@@ -7,7 +7,21 @@
 using namespace std;
 
 void get_URL(const string &host, const string &path) {
-    // Your code here.
+    TCPSocket sock; // 定义套接字
+    Address addr(host, "http"); // 定义地址
+    sock.connect(addr); // 连接到远程地址
+
+    string send_message = "GET " + path + " HTTP/1.1\r\n" + "Host: " + host + "\r\n" + "Connection: close\r\n\r\n"; // 构造请求
+    string recv_message = ""; // 构造响应
+    sock.write(send_message); // 发送请求
+    sock.shutdown(SHUT_WR); // 关闭写端
+
+    while(!sock.eof()) {
+        recv_message += sock.read(1); // 读取响应
+    }
+
+    std::cout << recv_message; // 输出响应
+    sock.close(); // 关闭套接字
 
     // You will need to connect to the "http" service on
     // the computer whose name is in the "host" string,
@@ -17,8 +31,8 @@ void get_URL(const string &host, const string &path) {
     // (not just one call to read() -- everything) until you reach
     // the "eof" (end of file).
 
-    cerr << "Function called: get_URL(" << host << ", " << path << ").\n";
-    cerr << "Warning: get_URL() has not been implemented yet.\n";
+    //cerr << "Function called: get_URL(" << host << ", " << path << ").\n";
+    //cerr << "Warning: get_URL() has not been implemented yet.\n";
 }
 
 int main(int argc, char *argv[]) {

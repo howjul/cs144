@@ -16,6 +16,14 @@ class ByteStream {
     // all, but if any of your tests are taking longer than a second,
     // that's a sign that you probably want to keep exploring
     // different approaches.
+    std::string buffer; //存储数据的缓冲区
+    size_t cap; //缓冲区的容量
+    size_t begin; //缓冲区的起始位置
+    size_t end; //缓冲区的结束位置
+    bool have_data; //缓冲区是否有数据
+    size_t already_read; //已读取的字节数
+    size_t already_written; //已写入的字节数
+    bool the_input_ended; //输入是否已经结束
 
     bool _error{};  //!< Flag indicating that the stream suffered an error.
 
