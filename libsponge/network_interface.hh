@@ -7,6 +7,9 @@
 
 #include <optional>
 #include <queue>
+#include <map>
+
+typedef unsigned int unit32_t;
 
 //! \brief A "network interface" that connects IP (the internet layer, or network layer)
 //! with Ethernet (the network access layer, or link layer).
@@ -30,6 +33,17 @@
 //! request or reply, the network interface processes the frame
 //! and learns or replies as necessary.
 class NetworkInterface {
+  public:
+  struct ArpEntry {
+    EthernetAddress ethernet_address;//下一个IP跳转的以太网地址
+    size_t last_used;//存在时间
+  };
+
+  struct data_cache {
+    InternetDatagram datagram;//数据包
+    Address next_hop;//跳转地址
+  };
+
   private:
     //! Ethernet (known as hardware, network-access-layer, or link-layer) address of the interface
     EthernetAddress _ethernet_address;
@@ -39,6 +53,12 @@ class NetworkInterface {
 
     //! outbound queue of Ethernet frames that the NetworkInterface wants sent
     std::queue<EthernetFrame> _frames_out{};
+
+    std::map<unit32_t, struct ArpEntry> arp_table{};//arp表
+    std::map<uint32_t, size_t> arp_request{};//arp请求表
+    std::queue<struct data_cache> datagram_cache{};//数据包缓存
+
+    size_t tick_counter = 0;
 
   public:
     //! \brief Construct a network interface with given Ethernet (network-access-layer) and IP (internet-layer) addresses
