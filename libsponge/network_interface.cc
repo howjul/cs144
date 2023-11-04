@@ -88,8 +88,43 @@ void NetworkInterface::send_datagram(const InternetDatagram &dgram, const Addres
 
 //! \param[in] frame the incoming Ethernet frame
 optional<InternetDatagram> NetworkInterface::recv_frame(const EthernetFrame &frame) {
-    //广播地址或者目的地不是本地直接返回
-    if()
+    //目的地不是本地或者广播则直接返回
+    if(frame.header().dst != ETHERNET_BROADCAST && frame.header().dst != _ethernet_address){
+        return {};
+    }
+    //判断是否为IPv4或者ARP包
+    if(frame.header().type == EthernetHeader::TYPE_IPv4){
+        //是IPv4，看能否正常解析，能则将报文返回给调用者
+        InternetDatagram curdata;
+        if(curdata.parse(frame.payload()) == ParseResult::NoError){
+            return curdata;
+        }else{
+            cerr << "Cannot parse ipv4" << endl;
+            return {};
+        }
+    }else if(frame.header().type == EthernetHeader::TYPE_ARP){
+        //是ARP包，看能否正常解析
+        ARPMessage curmes;
+        if(curmes.parse(frame.payload()) == ParseResult::NoError){
+            //更新arp表
+            auto item = arp_table.find(curmes.sender_ip_address);
+            if(item != arp_table.end()){
+                //(item->second).ethernet_address = curmes.sender_ethernet_address;
+                (item->second).last_used = tick_counter;
+            }else{
+                struct NetworkInterface::ArpEntry tmp = {curmes.sender_ethernet_address, tick_counter};
+                arp_table.insert(std::make_pair(curmes.sender_ip_address, tmp));
+            }
+            //删除等待队列中的数据
+            auto wait_item = arp_request.find(curmes.sender_ip_address);
+            if(item2 != arp_request.end()){
+                arp.request.erase
+            }
+
+
+        }
+    }
+
 }
 
 //! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method
