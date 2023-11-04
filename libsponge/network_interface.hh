@@ -8,6 +8,7 @@
 #include <optional>
 #include <queue>
 #include <map>
+#include <vector>
 
 typedef unsigned int unit32_t;
 
@@ -56,7 +57,7 @@ class NetworkInterface {
 
     std::map<unit32_t, struct ArpEntry> arp_table{};//arp表
     std::map<uint32_t, size_t> arp_request{};//arp请求表
-    std::queue<struct data_cache> datagram_cache{};//数据包缓存
+    std::vector<struct data_cache> datagram_cache{};//数据包缓存
 
     size_t tick_counter = 0;
 

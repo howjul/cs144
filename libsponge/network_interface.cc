@@ -82,7 +82,7 @@ void NetworkInterface::send_datagram(const InternetDatagram &dgram, const Addres
 
         //不管之前没有发送过ARP请求，都要将数据包加入缓存
         struct NetworkInterface::data_cache cur_datagram_cache = {dgram, next_hop};
-        datagram_cache.push(cur_datagram_cache);
+        datagram_cache.push_back(cur_datagram_cache);
     }
 }
 
@@ -118,13 +118,61 @@ optional<InternetDatagram> NetworkInterface::recv_frame(const EthernetFrame &fra
             //删除等待队列中的数据
             auto wait_item = arp_request.find(curmes.sender_ip_address);
             if(item2 != arp_request.end()){
-                arp.request.erase
+                arp_request.erase(item2);
             }
+            //遍历数据列表，发送对应的报文
+            for(auto it = datagram_cache.begin(); it != datagram_cache.end(); ){
+                if(it->next_hop.ipv4_numeric() == curmes.sender_ip_address){
+                    //目标以太网地址找到，发送
+                    EthernetHeader header;
+                    header.dst = curmes.sender_ethernet_address;
+                    header.src = _ethernet_address;
+                    header.type = EthernetHeader::TYPE_IPv4;
+        
+                    //组装为以太网帧
+                    EthernetFrame frame;
+                    frame.header() = header;
+                    frame.payload() = (it->datagram).serialize();
+                    _frames_out.push(frame);
 
+                    it = datagram_cache.erase(it);
+                }else{
+                    it++;
+                }
+            }
+            //若是请求包，还需发送ARP应答包告诉自己的ip
+            if(curmes.opcode == ARPMessage::OPCODE_REQUEST && curmes.target_ip_address == _ip_address.ipv4_numeric()){
+                ARPMessage arp_reply;
+                arp_reply.hardware_type = ARPMessage::TYPE_ETHERNET;
+                arp_reply.protocol_type = EthernetHeader::TYPE_IPv4;
+                arp_reply.hardware_address_size = sizeof(EthernetHeader::src);
+                arp_reply.protocol_address_size = sizeof(IPv4Header::src);
+                arp_reply.opcode = ARPMessage::OPCODE_REPLY;
+                arp_reply.sender_ethernet_address = _ethernet_address;
+                arp_reply.sender_ip_address = _ip_address.ipv4_numeric();
+                arp_reply.target_ethernet_address = curmes.sender_ethernet_address;
+                arp_reply.target_ip_address = curmes.sender_ip_address;
 
+                //构造ARP请求头
+                EthernetHeader header;
+                header.dst = curmes.sender_ethernet_address;
+                header.src = _ethernet_address;
+                header.type = EthernetHeader::TYPE_ARP;
+            
+                //构造ARP请求帧
+                EthernetFrame frame;
+                frame.header() = header;
+                frame.payload() = arp_reply.serialize();
+            
+                //发送ARP请求
+                _frames_out.push(frame);
+            }
+        }else{
+            cerr << "Cannot parse arp" << endl;
+            return {};
         }
     }
-
+    return {};
 }
 
 //! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method
