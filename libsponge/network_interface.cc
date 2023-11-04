@@ -117,8 +117,8 @@ optional<InternetDatagram> NetworkInterface::recv_frame(const EthernetFrame &fra
             }
             //删除等待队列中的数据
             auto wait_item = arp_request.find(curmes.sender_ip_address);
-            if(item2 != arp_request.end()){
-                arp_request.erase(item2);
+            if(wait_item != arp_request.end()){
+                arp_request.erase(wait_item);
             }
             //遍历数据列表，发送对应的报文
             for(auto it = datagram_cache.begin(); it != datagram_cache.end(); ){
@@ -130,10 +130,10 @@ optional<InternetDatagram> NetworkInterface::recv_frame(const EthernetFrame &fra
                     header.type = EthernetHeader::TYPE_IPv4;
         
                     //组装为以太网帧
-                    EthernetFrame frame;
-                    frame.header() = header;
-                    frame.payload() = (it->datagram).serialize();
-                    _frames_out.push(frame);
+                    EthernetFrame the_frame;
+                    the_frame.header() = header;
+                    the_frame.payload() = (it->datagram).serialize();
+                    _frames_out.push(the_frame);
 
                     it = datagram_cache.erase(it);
                 }else{
@@ -160,12 +160,12 @@ optional<InternetDatagram> NetworkInterface::recv_frame(const EthernetFrame &fra
                 header.type = EthernetHeader::TYPE_ARP;
             
                 //构造ARP请求帧
-                EthernetFrame frame;
-                frame.header() = header;
-                frame.payload() = arp_reply.serialize();
+                EthernetFrame the_frame;
+                the_frame.header() = header;
+                the_frame.payload() = arp_reply.serialize();
             
                 //发送ARP请求
-                _frames_out.push(frame);
+                _frames_out.push(the_frame);
             }
         }else{
             cerr << "Cannot parse arp" << endl;
