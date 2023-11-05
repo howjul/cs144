@@ -33,7 +33,7 @@ void NetworkInterface::send_datagram(const InternetDatagram &dgram, const Addres
     // convert IP address of next hop to raw 32-bit representation (used in ARP header)
     const uint32_t next_hop_ip = next_hop.ipv4_numeric();
 
-    std::map<unit32_t, struct ArpEntry>::iterator it = arp_table.find(next_hop_ip);
+    auto it = arp_table.find(next_hop_ip);
     if (it != arp_table.end()){
         //目标以太网地址已经找到，直接发送
         EthernetHeader header;
@@ -48,7 +48,7 @@ void NetworkInterface::send_datagram(const InternetDatagram &dgram, const Addres
         _frames_out.push(frame);
     }else{
         //找不到目标以太网地址，先查询之前是否发送过ARP请求
-        std::map<uint32_t, size_t>::iterator it2 = arp_request.find(next_hop_ip);
+        auto it2 = arp_request.find(next_hop_ip);
         if(it2 == arp_request.end()){
             //之前没有发送过ARP请求，发送ARP请求，构造ARP请求报文
             ARPMessage arp_message;
@@ -77,7 +77,7 @@ void NetworkInterface::send_datagram(const InternetDatagram &dgram, const Addres
             _frames_out.push(frame);
 
             //将此请求加入请求表
-            arp_request.insert(std::pair<uint32_t, size_t>(next_hop_ip, tick_counter));
+            arp_request.insert(std::make_pair(next_hop_ip, tick_counter));
         }
 
         //不管之前没有发送过ARP请求，都要将数据包加入缓存
@@ -109,7 +109,7 @@ optional<InternetDatagram> NetworkInterface::recv_frame(const EthernetFrame &fra
             //更新arp表
             auto item = arp_table.find(curmes.sender_ip_address);
             if(item != arp_table.end()){
-                //(item->second).ethernet_address = curmes.sender_ethernet_address;
+                (item->second).ethernet_address = curmes.sender_ethernet_address;
                 (item->second).last_used = tick_counter;
             }else{
                 struct NetworkInterface::ArpEntry tmp = {curmes.sender_ethernet_address, tick_counter};
@@ -181,7 +181,7 @@ void NetworkInterface::tick(const size_t ms_since_last_tick)
     tick_counter += ms_since_last_tick;
 
     //遍历arp表，删除过期的条目
-    std::map<unit32_t, struct ArpEntry>::iterator it = arp_table.begin();
+    auto it = arp_table.begin();
     for(; it != arp_table.end();){
         if((it->second).last_used + 30 * 1000 < tick_counter){//过期，删除
             it = arp_table.erase(it);
@@ -191,8 +191,8 @@ void NetworkInterface::tick(const size_t ms_since_last_tick)
     }
 
     //遍历arp请求表，重新发送过期的条目
-    std::map<uint32_t, size_t>::iterator it2 = arp_request.begin();
-    for(; it2 != arp_request.end();){
+    auto it2 = arp_request.begin();
+    for(; it2 != arp_request.end(); it2++){
         if(it2->second + 5 * 1000 < tick_counter){
             //过期，重新发送
             ARPMessage arp_message;

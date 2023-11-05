@@ -7,7 +7,7 @@
 
 #include <optional>
 #include <queue>
-#include <map>
+#include <unordered_map>
 #include <vector>
 
 typedef unsigned int unit32_t;
@@ -55,8 +55,8 @@ class NetworkInterface {
     //! outbound queue of Ethernet frames that the NetworkInterface wants sent
     std::queue<EthernetFrame> _frames_out{};
 
-    std::map<unit32_t, struct ArpEntry> arp_table{};//arp表
-    std::map<uint32_t, size_t> arp_request{};//arp请求表
+    std::unordered_map<unit32_t, struct ArpEntry> arp_table{};//arp表
+    std::unordered_map<uint32_t, size_t> arp_request{};//arp请求表
     std::vector<struct data_cache> datagram_cache{};//数据包缓存
 
     size_t tick_counter = 0;
