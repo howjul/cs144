@@ -45,7 +45,7 @@ class Router {
     std::vector<AsyncNetworkInterface> _interfaces{};
 
     //路由表
-    std::vector<struct RouterEntry> router_table;
+    std::vector<struct RouterEntry> router_table{};
 
     //! Send a single datagram from the appropriate outbound interface to the next hop,
     //! as specified by the route with the longest prefix_length that matches the
@@ -72,13 +72,15 @@ class Router {
 
     //! Route packets between the interfaces
     void route();
+
+    bool match(uint32_t cur_ip, uint32_t target_ip, uint8_t prefix_length);
 };
 
 struct RouterEntry{
-    uint32_t route_prefix;
-    uint8_t prefix_length;
-    std::optional<Address> next_hop;
-    size_t interface_num;
+    uint32_t route_prefix = 0;
+    uint8_t prefix_length = 0;
+    std::optional<Address> next_hop{};
+    size_t interface_num = 0;
 };
 
 #endif  // SPONGE_LIBSPONGE_ROUTER_HH
