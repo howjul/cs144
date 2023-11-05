@@ -44,6 +44,9 @@ class Router {
     //! The router's collection of network interfaces
     std::vector<AsyncNetworkInterface> _interfaces{};
 
+    //路由表
+    std::vector<struct RouterEntry> router_table;
+
     //! Send a single datagram from the appropriate outbound interface to the next hop,
     //! as specified by the route with the longest prefix_length that matches the
     //! datagram's destination address.
@@ -69,6 +72,13 @@ class Router {
 
     //! Route packets between the interfaces
     void route();
+};
+
+struct RouterEntry{
+    uint32_t route_prefix;
+    uint8_t prefix_length;
+    std::optional<Address> next_hop;
+    size_t interface_num;
 };
 
 #endif  // SPONGE_LIBSPONGE_ROUTER_HH
