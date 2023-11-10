@@ -14,6 +14,8 @@
 //! the acknowledgment number and window size to advertise back to the
 //! remote TCPSender.
 class TCPReceiver {
+    bool _set_syn_flag;
+    WrappingInt32 isn;
     //! Our data structure for re-assembling bytes.
     StreamReassembler _reassembler;
 
@@ -25,7 +27,7 @@ class TCPReceiver {
     //!
     //! \param capacity the maximum number of bytes that the receiver will
     //!                 store in its buffers at any give time.
-    TCPReceiver(const size_t capacity) : _reassembler(capacity), _capacity(capacity) {}
+    TCPReceiver(const size_t capacity) : _set_syn_flag(false), isn(WrappingInt32(0)), _reassembler(capacity), _capacity(capacity)  {}
 
     //! \name Accessors to provide feedback to the remote TCPSender
     //!@{

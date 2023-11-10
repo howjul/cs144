@@ -7,7 +7,10 @@
 #include "wrapping_integers.hh"
 
 #include <functional>
+#include <map>
 #include <queue>
+#include <string>
+#include <tuple>
 
 //! \brief The "sender" part of a TCP implementation.
 
@@ -31,6 +34,25 @@ class TCPSender {
 
     //! the (absolute) sequence number for the next byte to be sent
     uint64_t _next_seqno{0};
+
+
+    //存储未确认的tcpsegment
+    std::map<size_t, TCPSegment> not_ack{};
+    //发送但是未收到确认的字节数
+    size_t in_flight = 0;
+    //窗口大小
+    size_t win_size = 1;
+    
+    //是否发出syn报文
+    bool set_syn = false;
+    //是否发出fin报文
+    bool set_fin = false;
+    //超时次数
+    unsigned int timeout_cnt = 0;
+    //阈值，超出此时间则超时
+    unsigned int timeout_gap = 0;
+    //离第一个未确认tcpsegment发出时间，ms
+    unsigned int time_ms = 0;
 
   public:
     //! Initialize a TCPSender
