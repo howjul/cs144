@@ -3,7 +3,6 @@
 #include "tcp_config.hh"
 
 #include <random>
-#include <iostream>
 
 // Dummy implementation of a TCP sender
 
@@ -23,118 +22,17 @@ TCPSender::TCPSender(const size_t capacity, const uint16_t retx_timeout, const s
     , _initial_retransmission_timeout{retx_timeout}
     , _stream(capacity) {}
 
-uint64_t TCPSender::bytes_in_flight() const { 
-    return in_flight;
-}
+uint64_t TCPSender::bytes_in_flight() const { return {}; }
 
-void TCPSender::fill_window() {
+void TCPSender::fill_window() {}
 
-    size_t win = win_size ? win_size : 1;
+//! \param ackno The remote receiver's ackno (acknowledgment number)
+//! \param window_size The remote receiver's advertised window size
+void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_size) { DUMMY_CODE(ackno, window_size); }
 
-    if (!set_syn) {
-        TCPSegment seg;
-        seg.header().seqno = next_seqno();
-        set_syn = seg.header().syn = true;
+//! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method
+void TCPSender::tick(const size_t ms_since_last_tick) { DUMMY_CODE(ms_since_last_tick); }
 
-        _next_seqno += seg.length_in_sequence_space();
-        in_flight += seg.length_in_sequence_space();
+unsigned int TCPSender::consecutive_retransmissions() const { return {}; }
 
-        timeout_gap = _initial_retransmission_timeout;
-        time_ms = 0;
-
-        _segments_out.push(seg);
-        
-        not_ack.insert(make_pair(_next_seqno, seg));
-
-    }
-
-    while (in_flight < win) {
-
-        TCPSegment seg;
-        seg.header().seqno = next_seqno();
-
-        size_t read_len = min(TCPConfig::MAX_PAYLOAD_SIZE, win - in_flight );
-        string payload = _stream.read(read_len);
-        seg.payload() = Buffer(move(payload));
-
-        if (!set_fin && _stream.eof() && win - in_flight - seg.length_in_sequence_space() > 0) {
-            set_fin = seg.header().fin = true;
-        }
-        if (seg.length_in_sequence_space() == 0) {
-            break;
-        }
-
-        _next_seqno += seg.length_in_sequence_space();
-        in_flight += seg.length_in_sequence_space();
-
-       if (not_ack.empty()) {
-            timeout_gap = _initial_retransmission_timeout;
-            time_ms = 0;
-        }
-        _segments_out.push(seg);
-        
-        not_ack.insert(make_pair(_next_seqno, seg));
-        if (seg.header().fin) {
-            break;
-        }
-    }
-}
-
-
-
-// ! \param ackno The remote receiver's ackno (acknowledgment number)
-// ! \param window_size The remote receiver's advertised window size
-void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_size) {
-    size_t abs_ack = unwrap(ackno, _isn, _next_seqno);
-    if (abs_ack > _next_seqno) {
-        return;
-    }
-    auto it = not_ack.begin();
-    while (it != not_ack.end()) {
-        if (it -> first <= abs_ack) {
-            in_flight -= it -> second.length_in_sequence_space();
-            it = not_ack.erase(it);
-
-            timeout_gap = _initial_retransmission_timeout;
-            time_ms = 0;
-            timeout_cnt = 0;
-        }
-        else {
-            break;
-        }
-    }
-
-    win_size = window_size;
-    fill_window();
-
-}
-
-
-
-// ! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method
-void TCPSender::tick(const size_t ms_since_last_tick) {
-    time_ms += ms_since_last_tick;
-    auto it = not_ack.begin();
-    while (it != not_ack.end() && time_ms >= timeout_gap)
-    {
-        _segments_out.push(it -> second);
-        if (win_size > 0) {
-            timeout_gap *= 2;
-            timeout_cnt ++;
-        }
-        time_ms = 0;
-    }
-    
-}
-
-
-
-
-
-unsigned int TCPSender::consecutive_retransmissions() const { return timeout_cnt; }
-
-void TCPSender::send_empty_segment() {
-    TCPSegment seg;
-    seg.header().seqno = next_seqno();
-    _segments_out.push(seg);
-}
+void TCPSender::send_empty_segment() {}
