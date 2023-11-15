@@ -8,6 +8,7 @@
 
 #include <functional>
 #include <queue>
+#include <map>
 
 //! \brief The "sender" part of a TCP implementation.
 
@@ -31,6 +32,23 @@ class TCPSender {
 
     //! the (absolute) sequence number for the next byte to be sent
     uint64_t _next_seqno{0};
+
+    //是否已经发出syn包
+    bool _syn_sent{false};
+    //是否已经发出fin包
+    bool _fin_sent{false};
+    //重传次数
+    uint32_t _retransmission_count{0};
+    //超时时间，会随着重传次数增加而增加
+    uint32_t _timeout_tick{0};
+    //时间
+    uint32_t _tick_time{0};
+    //没有收到确认的tcpsegment
+    std::map<size_t, TCPSegment> _unacknowledged_segments{};
+    //没有收到确认的字节数
+    size_t _unacknowledged_bytes{0};
+    //最大窗口大小
+    size_t _window_size{0};
 
   public:
     //! Initialize a TCPSender
