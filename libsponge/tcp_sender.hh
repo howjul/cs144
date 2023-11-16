@@ -48,7 +48,7 @@ class TCPSender {
     //没有收到确认的字节数
     size_t _unacknowledged_bytes{0};
     //最大窗口大小
-    size_t _window_size{0};
+    size_t _window_size{1};
 
   public:
     //! Initialize a TCPSender

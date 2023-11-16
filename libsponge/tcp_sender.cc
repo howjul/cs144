@@ -22,7 +22,7 @@ TCPSender::TCPSender(const size_t capacity, const uint16_t retx_timeout, const s
     , _initial_retransmission_timeout{retx_timeout}
     , _stream(capacity) {}
 
-uint64_t TCPSender::bytes_in_flight() const { return _unacknowledged_bytes; }
+size_t TCPSender::bytes_in_flight() const { return _unacknowledged_bytes; }
 
 void TCPSender::fill_window() 
 {
@@ -81,7 +81,7 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
     //遍历数据结构，如果一个发送的segment已经被确认，则从数据结构中删除，并更新相关的数据
     auto it = _unacknowledged_segments.begin();
     while(it != _unacknowledged_segments.end()){
-        if(it->first <= unwrap(ackno, _isn, _next_seqno)){
+        if(it->first + it->second.length_in_sequence_space() <= unwrap(ackno, _isn, _next_seqno)){
             _unacknowledged_bytes -= (it->second).length_in_sequence_space();
             _tick_time = 0;
             _retransmission_count = 0;

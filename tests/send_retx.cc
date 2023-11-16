@@ -22,26 +22,26 @@ int main() {
             cfg.fixed_isn = isn;
             cfg.rt_timeout = retx_timeout;
 
-            TCPSenderTestHarness test{"Retx SYN twice at the right times, then ack", cfg};
-            test.execute(ExpectSegment{}.with_no_flags().with_syn(true).with_payload_size(0).with_seqno(isn));
-            test.execute(ExpectNoSegment{});
-            test.execute(ExpectState{TCPSenderStateSummary::SYN_SENT});
-            test.execute(Tick{retx_timeout - 1u});
-            test.execute(ExpectNoSegment{});
-            test.execute(Tick{1});
-            test.execute(ExpectSegment{}.with_no_flags().with_syn(true).with_payload_size(0).with_seqno(isn));
-            test.execute(ExpectState{TCPSenderStateSummary::SYN_SENT});
-            test.execute(ExpectBytesInFlight{1});
-            // Wait twice as long b/c exponential back-off
-            test.execute(Tick{2 * retx_timeout - 1u});
-            test.execute(ExpectNoSegment{});
-            test.execute(Tick{1});
-            test.execute(ExpectSegment{}.with_no_flags().with_syn(true).with_payload_size(0).with_seqno(isn));
-            test.execute(ExpectState{TCPSenderStateSummary::SYN_SENT});
-            test.execute(ExpectBytesInFlight{1});
-            test.execute(AckReceived{WrappingInt32{isn + 1}});
-            test.execute(ExpectState{TCPSenderStateSummary::SYN_ACKED});
-            test.execute(ExpectBytesInFlight{0});
+TCPSenderTestHarness test{"Retx SYN twice at the right times, then ack", cfg};
+test.execute(ExpectSegment{}.with_no_flags().with_syn(true).with_payload_size(0).with_seqno(isn));
+test.execute(ExpectNoSegment{});
+test.execute(ExpectState{TCPSenderStateSummary::SYN_SENT});
+test.execute(Tick{retx_timeout - 1u});
+test.execute(ExpectNoSegment{});
+test.execute(Tick{1});
+test.execute(ExpectSegment{}.with_no_flags().with_syn(true).with_payload_size(0).with_seqno(isn));
+test.execute(ExpectState{TCPSenderStateSummary::SYN_SENT});
+test.execute(ExpectBytesInFlight{1});
+// Wait twice as long b/c exponential back-off
+test.execute(Tick{2 * retx_timeout - 1u});
+test.execute(ExpectNoSegment{});
+test.execute(Tick{1});
+test.execute(ExpectSegment{}.with_no_flags().with_syn(true).with_payload_size(0).with_seqno(isn));
+test.execute(ExpectState{TCPSenderStateSummary::SYN_SENT});
+test.execute(ExpectBytesInFlight{1});
+test.execute(AckReceived{WrappingInt32{isn + 1}});
+test.execute(ExpectState{TCPSenderStateSummary::SYN_ACKED});
+test.execute(ExpectBytesInFlight{0});
         }
 
         {
