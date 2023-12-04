@@ -39,7 +39,6 @@ void TCPConnection::tick(const size_t ms_since_last_tick) {
         //发送rst报文
         TCPSegment seg;
         seg.header().rst = true;
-        //seg.header().seqno = _sender.next_seqno();
         _segments_out.push(seg);
         return;
     }
@@ -156,7 +155,15 @@ TCPConnection::~TCPConnection() {
         if (active()) {
             cerr << "Warning: Unclean shutdown of TCPConnection\n";
 
-            // Your code here: need to send a RST segment to the peer
+            _sender.stream_in().set_error();
+            _receiver.stream_out().set_error();
+            _is_active = false;
+            _linger_after_streams_finish = false;
+            //发送rst报文
+            TCPSegment seg;
+            seg.header().rst = true;
+            _segments_out.push(seg);
+            return;
         }
     } catch (const exception &e) {
         std::cerr << "Exception destructing TCP FSM: " << e.what() << std::endl;
