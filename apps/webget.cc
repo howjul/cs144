@@ -1,4 +1,5 @@
-#include "socket.hh"
+// #include "socket.hh"
+#include "tcp_sponge_socket.hh"
 #include "util.hh"
 
 #include <cstdlib>
@@ -7,7 +8,7 @@
 using namespace std;
 
 void get_URL(const string &host, const string &path) {
-    TCPSocket sock; // 定义套接字
+    FullStackSocket sock; // 定义套接字
     Address addr(host, "http"); // 定义地址
     sock.connect(addr); // 连接到远程地址
 
@@ -22,6 +23,8 @@ void get_URL(const string &host, const string &path) {
 
     std::cout << recv_message; // 输出响应
     sock.close(); // 关闭套接字
+
+    sock.wait_until_closed();
 
     // You will need to connect to the "http" service on
     // the computer whose name is in the "host" string,

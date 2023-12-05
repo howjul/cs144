@@ -46,7 +46,7 @@ void TCPConnection::tick(const size_t ms_since_last_tick) {
    //当处于TCP的TIME_WAIT状态时，结束连接，也就是对象被释放，但是TCP仍然处于连接状态
     if (TCPState::state_summary(_receiver) == TCPReceiverStateSummary::FIN_RECV &&
         TCPState::state_summary(_sender) == TCPSenderStateSummary::FIN_ACKED &&
-        _linger_after_streams_finish && _time_since_last_segment_received >= 10 * TCPConfig::MAX_RETX_ATTEMPTS) {
+        _linger_after_streams_finish && _time_since_last_segment_received >= 10 * _cfg.rt_timeout) {
         _linger_after_streams_finish = false;
         _is_active = false;
     }
@@ -71,12 +71,13 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
 
     //把段交给TCPReceiver
     _receiver.segment_received(seg);
-    
+
     if(seg.header().ack){
         //ack_received的最后会调用fill_window来发送报文
         _sender.ack_received(seg.header().ackno, seg.header().win);
         //如果队列中已经有数据报了就不需要专门的空包回复ACK了
-        if(!_sender.segments_out().empty()) need_send_ack = false;
+        if(!_sender.segments_out().empty())
+            need_send_ack = false;
     }
 
     //状态变化(按照个人的情况可进行修改)
@@ -91,8 +92,15 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
     // 判断 TCP 断开连接时是否时需要等待
     // CLOSE_WAIT
     if (TCPState::state_summary(_receiver) == TCPReceiverStateSummary::FIN_RECV &&
-        TCPState::state_summary(_sender) == TCPSenderStateSummary::SYN_ACKED)
-        _linger_after_streams_finish = false;
+        TCPState::state_summary(_sender) == TCPSenderStateSummary::SYN_ACKED){
+            _linger_after_streams_finish = false;
+    }
+        
+    // 如果收到的数据包里没有任何数据，则这个数据包可能只是为了 keep-alive
+    if (need_send_ack){
+        _sender.send_empty_segment();
+    }
+    send_segment();
 
     // 如果到了准备断开连接的时候。服务器端先断
     // CLOSED
@@ -102,11 +110,7 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
         return;
     }
 
-    // 如果收到的数据包里没有任何数据，则这个数据包可能只是为了 keep-alive
-    if (need_send_ack)
-        _sender.send_empty_segment();
-
-    send_segment();
+    
 }
 
 //写入相应的字节流并发送
@@ -154,18 +158,14 @@ TCPConnection::~TCPConnection() {
     try {
         if (active()) {
             cerr << "Warning: Unclean shutdown of TCPConnection\n";
-
             _sender.stream_in().set_error();
             _receiver.stream_out().set_error();
             _is_active = false;
             _linger_after_streams_finish = false;
-            //发送rst报文
-            TCPSegment seg;
-            seg.header().rst = true;
-            _segments_out.push(seg);
-            return;
         }
     } catch (const exception &e) {
         std::cerr << "Exception destructing TCP FSM: " << e.what() << std::endl;
     }
 }
+
+    

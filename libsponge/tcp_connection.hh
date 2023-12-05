@@ -29,7 +29,6 @@ class TCPConnection {
     //!@{
 
     void send_segment();
-    void set_rst(bool if_send);
 
     //! \brief Initiate a connection by sending a SYN segment
     void connect();
